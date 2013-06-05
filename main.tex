@@ -1,0 +1,396 @@
+% Copyright 2004 by Till Tantau <tantau@users.sourceforge.net>.
+%
+% In principle, this file can be redistributed and/or modified under
+% the terms of the GNU Public License, version 2.
+%
+% However, this file is supposed to be a template to be modified
+% for your own needs. For this reason, if you use this file as a
+% template and not specifically distribute it as part of a another
+% package/program, I grant the extra permission to freely copy and
+% modify this file as you see fit and even to delete this copyright
+% notice. 
+
+\documentclass[noindent]{beamer}
+\usepackage{ctex}
+\usepackage{amsmath,amsfonts,amssymb,amsthm}
+\usepackage{clrscode3e}
+% There are many different themes available for Beamer. A comprehensive
+% list with examples is given here:
+% http://deic.uab.es/~iblanes/beamer_gallery/index_by_theme.html
+% You can uncomment the themes below if you would like to use a different
+% one:
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{boxes}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{default}
+%\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+\usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+
+\title{EM Algorithm Tutorial}
+
+% A subtitle is optional and this may be deleted
+\subtitle{Expectation Maximization}
+
+\author{李修成}
+%\author{F.~Author\inst{1} \and S.~Another\inst{2}}
+
+\institute[HIT]
+{
+    Department of Computer Science\\
+    Harbin Institute of Technology
+}
+
+%\institute[Universities of Somewhere and Elsewhere] % (optional, but mostly needed)
+%{
+%  \inst{1}%
+%  Department of Computer Science\\
+%  University of Somewhere
+%  \and
+%  \inst{2}%
+%  Department of Theoretical Philosophy\\
+%  University of Elsewhere
+%}
+
+\date{}
+%\date{Conference Name, 2013}
+
+\subject{Theoretical Computer Science}
+
+%\AtBeginSubsection[]
+%{
+%  \begin{frame}<beamer>{Outline}
+ %   \tableofcontents[currentsection,currentsubsection]
+%  \end{frame}
+%}
+
+% Let's get started
+
+\begin{document}
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Outline}
+  \tableofcontents
+\end{frame}
+
+\section{EM算法的提出}
+\begin{frame}{为什么要有EM算法}
+\begin{itemize}
+\item {
+        EM算法解决的是含有隐含变量概率模型的参数估计问题（极大似然估计）
+}
+
+\item {
+ 考虑如下概率模型参数估计
+\begin{equation}
+\ell(\theta)=\log p(x;\theta) = \log  \sum_{z}p(x,z;\theta)
+\end{equation}
+问题难以用极大似然估计求解参数！难在$\log$与$p$之间有个$\Sigma$！
+}
+\pause
+\item {
+  Gaussian Discriminant Analysis model 高斯判别分析
+}
+\item {
+  Gaussian Mixture Model 高斯混合模型
+}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{GDA(高斯判别分析),MLE易解}
+\begin{block}{高斯判别分析}
+已知有多个正态分布，每个样本数据由一个正态分布产生，生成数据的正态分布已知。给出训练数据，现要估计参数
+\end{block}
+$p(x^{(i)},z^{(i)}) = p(x^{(i)}|z^{(i)})p(z^{(i)})$.
+ $z^{(i)} \sim Multinomial(\phi) (where \ \phi_j \geq 0,
+\sum_{j=1}^k \phi_j = 1$, and the parameter gives $p(z^{(i)}=j)$), and $(x^{(i)}|z^{(i)}=j) \sim N(\mu_j,\Sigma_j)$.
+\end{frame}
+
+\begin{frame}
+GDA似然函数
+\begin{equation}
+\begin{split}
+    \ell(\phi,\mu,\Sigma) &= \sum_{i=1}^{m}  \log p(x^{(i)},z^{(i)}; \mu , \Sigma ) \\
+              &= \sum_{i=1}^{m} \log  p(x^{(i)}|z^{(i)}; \mu , \Sigma ) p(z^{(i)}; \phi ) \\
+              &= \sum_{i=1}^{m} \log   \frac{1}{(2\pi)^{n/2}| \Sigma _j|^{1/2}}\exp(-\frac{1}{2}(x^{(i)}-\mu_j)^T\Sigma_j^{-1}(x^{(i)}-\mu_j))\phi_j 
+\end{split}
+\end{equation}
+\end{frame}
+\begin{frame}{MLE求解GDA}
+Maximizing this with respect to $\phi, \mu, \Sigma$ gives the parameters:
+
+\begin{itemize}
+\item $\phi_j =  \frac{1}{m} \sum_{i=1}^m 1\{z^{(i)}=j\}$
+\item $\mu_j = \frac{\sum_{i=1}^m 1\{z^{(i)}=j\} x^{(i)}}{\sum_{i=1}^m1\{z^{(i)}=j\}}$
+\item $\Sigma_j = \frac{\sum_{i=1}^m 1\{z^{(i)}=j\}(x^{(i)}-\mu_j)(x^{(i)}-\mu_j)^T
+}{\sum_{i=1}^m 1\{z^{(i)}=j\}}$
+\end{itemize}
+\end{frame}
+\begin{frame}{GMM(高斯混合模型)，MLE难解}
+\begin{block}{高斯混合模型}
+已知有多个正态分布，每个样本数据由一个正态分布产生，但具体是哪一个，我们无法观测（含有隐含变量）。给出训练数据，现要估计参数
+\end{block}
+$p(x^{(i)},z^{(i)}) = p(x^{(i)}|z^{(i)})p(z^{(i)})$.\\
+ $z^{(i)} \sim Multinomial(\phi) (where \ \phi_j \geq 0,
+\sum_{j=1}^k \phi_j = 1$, and the parameter gives $p(z^{(i)}=j)$), and $(x^{(i)}|z^{(i)}=j) \sim N(\mu_j,\Sigma_j)$.
+
+\end{frame}
+
+\begin{frame}
+GMM似然函数
+\begin{equation}
+\begin{split}
+   \ell(\phi,\mu,\Sigma)  &= \sum_{i=1}^{m}  \log p(x^{(i)},z^{(i)}; \mu , \Sigma ) \\
+              &= \sum_{i=1}^{m} \log  \sum _{z^{(i)}=1}^{k} p(x^{(i)}|z^{(i)}; \mu , \Sigma ) p(z^{(i)}; \phi ) \\
+              &= \sum_{i=1}^{m} \log  \sum _{j=1}^{k} \frac{1}{(2\pi)^{n/2}| \Sigma _j|^{1/2}} \exp(-\frac{1}{2}(x^{(i)}-\mu_j)^T\Sigma_j^{-1}(x^{(i)}-\mu_j))\phi_j 
+\end{split}
+\end{equation}
+\end{frame}
+
+\section{EM算法的推导}
+\begin{frame}
+\begin{itemize}
+\item {
+怎么办? \pause Jensen's Inequality
+\begin{equation}
+\begin{split}
+\ell(\theta)=\log p(x;\theta) &=  \log  \sum_{z}p(x,z;\theta) \\
+			   &= \log \sum_{z}Q(z)\frac{p(x,z;\theta)}{Q(z)} \\
+                           &\geq \sum_{z}Q(z)\log \frac{p(x,z;\theta)}{Q(z)} 
+\end{split}
+\end{equation}
+$Q(z)$为关于隐含变量$z$的任意分布
+}
+\end{itemize}
+\end{frame}
+\begin{frame}
+\begin{itemize}
+\item { 
+令 $\displaystyle \mathcal{L}(x,z;\theta) = \sum_{z}Q(z) \log \frac{p(x,z;\theta)}{Q(z)} $得到
+\begin{equation}
+\begin{split}
+\ell(\theta)-\mathcal{L}(x,z;\theta) &= \log p(x;\theta)-\sum_{z}Q(z)\log \frac{p(x,z;\theta)}{Q(z)} \\
+                        &= \sum_{z} Q(z) \log p(x;\theta)-\sum_{z}Q(z)\log \frac{p(x,z;\theta)}{Q(z)} \\
+			&= -\sum_{z}Q(z)\log\frac{p(z|x)}{Q(z)} = D(Q(z) \parallel p(z|x; \theta ))
+\end{split}
+\end{equation}
+}
+\item {
+似曾相识！\pause LDA!
+}
+\item {
+$\ell(\theta)-\mathcal{L}(x,z;\theta)$得到的是$Q(z)$和$p(z|x)$的KL距离，又称相对熵。
+}
+\item {
+\begin{equation}
+\ell(\theta) = \mathcal{L}(x,z;\theta) + D(Q(z) \parallel p(z|x; \theta ))
+\end{equation}
+}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\begin{itemize}
+\item {
+由于$\mathcal{L}(x,z;\theta)$消除了$\ell(\theta)$中$\log$后面的$\sum$，因此它是容易计算的
+}
+\item{
+由于$KL(q \parallel p) \geq 0$，故$\mathcal{L}(x,z;\theta)$为$\ell(\theta)$的下界
+}
+\item {
+用$\mathcal{L}(x,z;\theta)$去逼近$\ell(\theta)$，而$\ell(\theta) \geq \mathcal{L}(x,z;\theta)$\\
+故当$D(Q(z) \parallel p(z|x;\theta)) = 0$时，下界函数$\mathcal{L}(x,z;\theta)$可以最大化\\
+\pause
+EM算法的精髓！
+}
+\item {
+显然，当$Q(z) = p(z|x;\theta)$时$\mathcal{L}(x,z;\theta)$极大化
+}
+\end{itemize}
+\end{frame}
+
+\section{EM Algorithm}
+\begin{frame} {EM Algorithm}
+\begin{codebox}
+    \li Repeat until convergence \{
+        \Do
+    \li      \bf{E-step}: 
+    \li			For each i, set
+             \Do 
+    \li                   $Q_{i}(z^{(i)}) := p(z^{(i)}|x^{(i)};\theta)$
+             \End
+    \li      \bf{M-step}:
+    \li			 Set
+             \Do
+
+    \li			 $\theta := arg\ max_{\theta}  \sum_{i} \sum_{z}Q_{i}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta)}{Q_{i}(z^{(i)};\theta)}$
+             \End
+        \End
+    \li \}
+\end{codebox}
+其中\bf{M-step}亦可为，$\theta := arg\ max_{\theta}  \sum_{i} \sum_{z}Q_{i}(z^{(i)}) \log p(x^{(i)},z^{(i)};\theta)$\\
+因为，$\sum_{i} \sum_{z}Q_{i}(z^{(i)}) \log Q_i(z^{(i)})$是一个与$\theta$独立的常量
+\end{frame}
+
+\section{EM算法收敛性的证明}
+\begin{frame} {EM算法收敛性的证明}
+由于
+\begin{equation}
+\ell(\theta) \geq  \sum_{i}  \sum_{z}Q_{i}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta)}{Q_{i}(z^{(i)})} 
+\end{equation}
+$\Rightarrow$
+\begin{equation}
+\begin{split}
+\ell(\theta^{(t+1)}) &\geq  \sum_{i}  \sum_{z}Q_{i}^{(t)}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta^{(t+1)})}{Q_{i}^{(t)}(z^{(i)})} \\
+                  &\geq \sum_{i}  \sum_{z}Q_{i}^{(t)}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta^{(t)})}{Q_{i}^{(t)}(z^{(i)})} \\
+                  &= \ell(\theta^{(t)})
+\end{split}
+\end{equation}
+其中第2步成立是因为，$\theta^{t+1}$是由第$t$次迭代经极大似然估计得到。
+\end{frame}
+
+\section{EM算法的应用：求解GMM(高斯混合模型)}
+\begin{frame}{EM算法应用：求解GMM(高斯混合模型)}
+\alert{E-step:}令
+\begin{equation}
+\begin{split}
+    w_{j}^{(i)} &= Q_{i}(z^{(i)}=j) \\
+                &= p(z^{(i)}=j|x^{(i)}; \phi , \mu , \Sigma )\\ 
+                &= \frac{p(x^{(i)}|z^{(i)}=j; \mu , \Sigma ) p(z^{(i)}=j; \phi )}{ \sum _{l=1}^{k}p(x^{(i)}|z^{(i)}=l; \mu , \Sigma ) p(z^{(i)}=l; \phi )}
+\end{split}
+\end{equation}
+\end{frame}
+
+\begin{frame}
+\alert{M-step:}似然函数
+\begin{equation}
+\begin{split}
+    \ell(\theta) &= \sum_{i=1}^{m}  \sum _{z}Q_{i}(z^{(i)}) \log p(x^{(i)},z^{(i)}; \mu , \Sigma ) \\
+              &= \sum_{i=1}^{m}  \sum _{j=1}^{k}Q_{i}(z^{(i)}=j) \log p(x^{(i)}|z^{(i)}=j; \mu , \Sigma ) p(z^{(i)}=j; \phi ) \\
+              &= \sum_{i=1}^{m}  \sum _{j=1}^{k}w^{(i)}_{j} \log \frac{1}{(2\pi)^{n/2}| \Sigma _j|^{1/2}} \exp(-\frac{1}{2}(x^{(i)}-\mu_j)^T\Sigma_j^{-1}(x^{(i)}-\mu_j))\phi_j 
+\end{split}
+\end{equation}
+下面进行参数极大似然估计：
+\begin{itemize}
+\item $\mu_j$
+\item $\phi_j$
+\item $\Sigma_j$
+\end{itemize}
+\end{frame}
+
+\begin{frame}{一些矩阵论中的知识}
+%在进行参数估计这场战斗之前，先准备点克敌制胜的武器！
+兵马未动，粮草先行
+\begin{itemize}
+\item $ \nabla_x x^T A x = 2Ax$, $A$ is symmetric
+\item $ \nabla_x^2 x^TAx = 2A$, $A$ is symmetric
+\item $ \nabla_x b^T x = b$
+\item $ \nabla_A \log|A| = A^{-1}$, $A$ is invertible
+\item $ \nabla_A x^T A x = x x^T$, $A$ is $n \times n$ matrix
+\end{itemize}
+\end{frame}
+
+\begin{frame}{$\mu_j$的估计}
+\begin{equation}
+    \begin{split}
+       \nabla _{\mu_j} \ell(\theta) &= \nabla _{\mu_j} \sum_{i=1}^m  \sum_{j=1}^k w_j^{(i)}\frac{1}{2}(x^{(i)}-\mu_j)^T  \Sigma _j^{-1}(x^{(i)}-\mu_j) \\
+                                  &=  \sum_{i=1}^m w_j^{(i)} \Sigma_j^{-1}(x^{(i)}-\mu_j) = 0\\
+                            \mu_j &= \frac{\sum_{i=1}^m w_j^{(i)}x^{(i)}}{\sum_{i=1}^m w_j^{(i)}}
+    \end{split}
+\end{equation}
+\end{frame}
+
+\begin{frame}{$\phi_j$的估计}
+\begin{equation}
+    \begin{split}
+        \nabla _{ \phi _j} \ell(\theta) &= \nabla _{ \phi _j} \sum_{i=1}^m  \sum_{j=1}^k w_j^{(i)} \log \phi _j \\
+                                    &= \sum_{i=1}^m \frac{w_j^{(i)}}{\phi_j}
+    \end{split}
+\end{equation}
+\begin{itemize}
+\item 解不下去了，梯度$\nabla _{ \phi _j} \ell(\theta)  > 0$，似乎只要使$\phi_j$取无穷大，似然函数就可以无限大！
+\pause
+\item 哪有那么好的事!别忘了还有约束条件$\sum_{j=1}^k \phi_j = 1$! 
+\pause
+\item 什么? \alert{约束条件}!求\alert{极大值}!无限遐想中$\ldots$\\
+\pause
+\item 想到了Lagrangian，因为目标函数是凸的嘛！\pause（其实是凹的，正好可以求极大值）
+\end{itemize}
+\end{frame}
+
+\begin{frame}{$\phi_j$的估计}
+构造Lagrangian函数
+\begin{equation}
+\mathcal{L}(\phi) = \sum_{i=1}^m \sum_{j=1}^k w_j^{(i)} \log \phi_j +\beta(\sum_{j=1}^k \phi_j - 1) 
+\end{equation}
+求偏导
+\begin{equation}
+    \begin{split} 
+        \frac{\partial \mathcal{L}}{\partial \phi_j} &=  \sum_{i=1}^m \frac{w_j^{(i)}} {\phi_j} + \beta  \Rightarrow 
+      -\beta \phi_j = \sum_{i=1}^m w_j^{(i)} \\
+      -\beta \sum_{j=1}^k \phi_j &= \sum_{i=1}^m \sum_{j=1}^k w_j^{(i)} = m \Rightarrow -\beta = m \\
+    \phi_j &= \sum_{i=1}^m \frac{w_j^{(i)}}{m}
+    \end{split}
+\end{equation}
+\end{frame}
+
+\begin{frame} {$\Sigma_j$的估计}
+令$S_j = \Sigma_j^{-1}, b = (x^{(i)}-\mu_j)$ \\
+\begin{equation}
+    \begin{split}
+    \nabla_{s_j} \ell(\theta) &= \nabla_{s_j} \sum_{i=1}^m w_j^{(i)}(\frac{1}{2}\log|S_j|-\frac{1}{2}b^T S_j b) \\
+                          &= \frac{1}{2}\sum_{i=1}^m w_j^{(i)}(S_j^{-1}-bb^T) = 0\\
+                 S_j^{-1} &= \frac{\sum_{i=1}^m w_j^{(i)} bb^T}{\sum_{i=1}^m w_j^{(i)}} \\
+                 \Sigma_j &= \frac{\sum_{i=1}^m (x^{(i)}-\mu_j)(x^{(i)}-\mu_j)^T}{\sum_{i=1}^m w_j^{(i)}}
+    \end{split}
+\end{equation}
+
+\end{frame}
+
+\section{EM算法的推广：变分EM算法(Varitional EM)}
+\begin{frame}{EM算法的推广：变分EM算法(Varitional EM)}
+\begin{itemize}
+\pause
+\item 由于昨晚去喝酒了，而且喝得挺多，所以这部分内容没来的及做
+\item 回忆$\mathcal{LDA}$(Latent Dirichlet Allocation)
+\item $\ldots$
+\end{itemize}
+\end{frame}
+\end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

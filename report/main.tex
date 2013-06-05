@@ -1,0 +1,124 @@
+\documentclass[a4paper,14pt]{report}
+\usepackage{ctex}
+\input{/home/boat/texmf/en_preamble}
+
+\title{EM Algorithm Tutorial}
+\author{李修成}
+\date{}
+
+\begin{document}
+\maketitle
+\section{公式}
+\begin{equation}
+l(\theta)=\log p(x;\theta) = \log  \Sigma _{z}p(x,z;\theta)
+\end{equation}
+
+\begin{equation}
+\begin{split}
+l(\theta)=\log p(x;\theta) &=  \log  \Sigma_{z}p(x,z;\theta) \\
+			   &= \log \Sigma_{z}Q(z)\frac{p(x,z;\theta)}{Q(z)} \\
+                           &\geq \Sigma_{z}\log \frac{p(x,z;\theta)}{Q(z)} 
+\end{split}
+\end{equation}
+
+\begin{equation}
+\begin{split}
+l(\theta)-L(x,z;\theta) &= \log p(x;\theta)-\Sigma_{z}Q(z)\log \frac{p(x,z;\theta}{Q(z)} \\
+                        &= \Sigma_{z} Q(z) \log p(x;\theta)-\Sigma_{z}Q(z)\log \frac{p(x,z;\theta)}{Q(z)} \\
+			&= -\Sigma_{z}Q(z)\log\frac{p(z|x)}{Q(z)} = D(Q(z) \parallel p(z|x; \theta ))
+\end{split}
+\end{equation}
+
+\section{算法}
+\begin{codebox}
+    \li Repeat until convergence \{
+        \Do
+    \li      \bf{E-step}: 
+    \li			For each i, set
+             \Do 
+    \li                   $Q_{i}(z^{(i)}) := p(z^{(i)}|x^{(i)};\theta)$
+             \End
+    \li      \bf{M-step}:
+    \li			 Set
+             \Do
+
+    \li			 $\theta := arg\ max_{\theta}  \Sigma_{i} \Sigma_{z}Q_{i}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta)}{Q_{i}(z^{(i)};\theta)}$
+             \End
+        \End
+    \li \}
+\end{codebox}
+
+\section{收敛性的证明}
+
+\begin{equation}
+l(\theta) \geq  \Sigma_{i}  \Sigma_{z}Q_{i}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta)}{Q_{i}(z^{(i)})} 
+\end{equation}
+
+\begin{equation}
+\begin{split}
+l(\theta^{(t+1)}) &\geq  \Sigma_{i}  \Sigma_{z}Q_{i}^{(t)}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta^{(t+1)})}{Q_{i}^{(t)}(z^{(i)})} \\
+                  &\geq \Sigma_{i}  \Sigma_{z}Q_{i}^{(t)}(z^{(i)}) \log \frac{p(x^{(i)},z^{(i)};\theta^{(t)})}{Q_{i}^{(t)}(z^{(i)})} \\
+                  &= l(\theta^{(t)})
+\end{split}
+\end{equation}
+
+\section{EM算法求解GMM（高斯混合模型）}
+\bf{E-step:}令
+\begin{equation}
+\begin{split}
+    w_{j}^{(i)} &= Q_{i}(z^{(i)}=j) \\
+                &= p(z^{(i)}=j|x^{(i)}; \phi , \mu , \Sigma )\\
+                &= \frac{p(x^{(i)}|z^{(i)}=j; \mu , \Sigma ) p(z^{(i)}=j; \phi )}{ \Sigma _{l=1}^{k}p(x^{(i)}|z^{(i)}=l; \mu , \Sigma ) p(z^{(i)}=l; \phi )}
+\end{split}
+\end{equation}
+
+\bf{M-step:}
+\begin{equation}
+\begin{split}
+    l(\theta) &= \Sigma_{i=1}^{m}  \Sigma _{z}Q_{i}(z^{(i)}) \log p(x^{(i)},z^{(i)}; \mu , \Sigma ) \\
+              &= \Sigma_{i=1}^{m}  \Sigma _{j=1}^{k}Q_{i}(z^{(i)}=j) \log p(x^{(i)}|z^{(i)}=j; \mu , \Sigma ) p(z^{(i)}=j; \phi ) \\
+              &= \Sigma_{i=1}^{m}  \Sigma _{j=1}^{k}w^{(i)}_{j} \log \frac{1}{(2\pi)^{n/2}| \Sigma _j|^{1/2}}exp(-\frac{1}{2}(x^{(i)}-\mu_j)^T\Sigma_j^{-1}(x^{(i)}-\mu_j))\phi_j 
+\end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split}
+         \nabla _{\mu_j}l(\theta) &= \nabla _{\mu_j} \Sigma_{i=1}^m  \Sigma_{j=1}^k w_j^{(i)}\frac{1}{2}(x^{(i)}-\mu_j)^T  \Sigma _j^{-1}(x^{(i)}-\mu_j) \\
+                                  &=  \Sigma_{i=1}^m w_j^{(i)} \Sigma _j^{-1}(x^{(i)}-\mu_j) = 0\\
+                            \mu_j &= \frac{\Sigma_{i=1}^m w_j^{(i)}x^{(i)}}{\Sigma_{i=1}^m w_j^{(i)}}
+    \end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split}
+        \nabla _{ \phi _j}l(\theta) &= \nabla _{ \phi _j} \Sigma_{i=1}^m  \Sigma_{j=1}^k w_j^{(i)} \log \phi _j \\
+                                    &= \Sigma_{i=1}^m \frac{w_j^{(i)}}{\phi_j}
+    \end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split} 
+        L(\phi) &= \Sigma_{i=1}^m \Sigma_{j=1}^k w_j^{(i)} \log \phi_j +\beta(\Sigma_{j=1}^k \phi_j - 1) \\
+        \frac{\partial L}{\partial \phi_j} &=  \Sigma_{i=1}^m \frac{w_j^{(i)}} {\phi_j} + \beta  \Rightarrow 
+      -\beta \phi_j = \Sigma_{i=1}^m w_j^{(i)} \\
+      -\beta \Sigma_{j=1}^k \phi_j &= \Sigma_{i=1}^m \Sigma_{j=1}^k w_j^{(i)} = m \Rightarrow -\beta = m \\
+    \phi_j &= \Sigma_{i=1}^m \frac{w_j^{(i)}}{m}
+    \end{split}
+\end{equation}
+
+令$S_j = \Sigma_j^{-1}, b = (x^{(i)}-\mu_j)$ \\
+\begin{equation}
+    \begin{split}
+    \nabla_{s_j}l(\theta) &= \nabla_{s_j} \Sigma_{i=1}^m w_j^{(i)}(\frac{1}{2}\log|S_j|-\frac{1}{2}b^T S_j b) \\
+                          &= \frac{1}{2}\Sigma_j^{(i)}(S_j^{-1}-bb^T) = 0\\
+                 S_j^{-1} &= \frac{\Sigma_{j=1}^m bb^T}{\Sigma_{i=1}^m w_j^{(i)}} \\
+                 \Sigma_j &= \frac{\Sigma_{j=1}^m (x^{(i)}-\mu_j)(x^{(i)}-\mu_j)^T}{\Sigma_{i=1}^m w_j^{(i)}}
+    \end{split}
+\end{equation}
+
+\begin{equation}
+    \begin{split}    
+    \end{split}
+\end{equation}
+
+\end{document}
